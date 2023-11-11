@@ -19,8 +19,8 @@ if (cachePrebuilding) {
 
   bacache.get('cache_built', async (err, value) => {
     if (err) {
-      console.log("Cache not found, cache rebuilding will begin in 5 seconds...");
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      console.log("Prebuilt cache not found, building...");
+      await new Promise(resolve => setTimeout(resolve, 2000));
       await buildCache();
     } else {
       console.log("Cache found, starting server...");
@@ -29,9 +29,8 @@ if (cachePrebuilding) {
   });
 
 } else {
-  console.warn("Cache prebuilding is disabled, real-time caching will be used. This may cause slower first load times. Please enable cache prebuilding in server.js during production.");
-  console.log("The server will start in 5 seconds...");
-  await new Promise(resolve => setTimeout(resolve, 5000));
+  console.log("Realtime cache building is enabled, starting server...");
+  await new Promise(resolve => setTimeout(resolve, 1000));
   startServer();
 }
 
