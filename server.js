@@ -49,7 +49,6 @@ async function buildCache() {
         readline.cursorTo(process.stdout, 0, 2);
         readline.clearLine(process.stdout, 2);
         process.stdout.write(`frc${i} does not exist!`);
-        await new Promise(resolve => setTimeout(resolve, 500));
         continue;
       }
     }
@@ -81,7 +80,6 @@ async function buildCache() {
           resolve();
         });
       });
-      await new Promise(resolve => setTimeout(resolve, 10));
     }
   }
   readline.cursorTo(process.stdout, 0, 2);
