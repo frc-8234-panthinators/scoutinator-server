@@ -139,14 +139,113 @@ function startServer() {
     }
   });
 
-  app.get('/getTeamMatches', async (req, res) => {
+function calculateWeightedAverage(pastScores) {
+  let totalWeight = 0;
+  let weightedScoreSum = 0;
+
+  for (let i = 0; i < pastScores.length; i++) {
+      // Define the weight for this score
+      let weight = i + 1;
+
+      // Add to the total weight
+      totalWeight += weight;
+
+      // Add to the weighted score sum
+      weightedScoreSum += weight * pastScores[i];
+  }
+
+  return weightedScoreSum / totalWeight;
+}
+
+  app.get('/getTeamMatchData', async (req, res) => {
     const teamNum = req.query.team;
     const event = req.query.event;
     try {
       const teamMatches = await ky.get(`https://www.thebluealliance.com/api/v3/team/frc${teamNum}/event/${event}/matches`, {headers: {'X-TBA-Auth-Key': API_KEY}}).json();
-      res.json(teamMatches);
+      //if teamMatches is empty
+      if (teamMatches.length == 0) {
+        return res.json({"message": "No data found for this event."});
+      }
+      let data = {
+        graphs: [
+          {
+            "title": "Est. Team Score",
+            "type": "line",
+            "labels": [],
+            "data": [],
+          }
+        ]
+      };
+      let winCount = 0;
+      let lossCount = 0;
+      let qualNums = [];
+      let scoreData = [];
+      let oldScoreData = [];
+      for (let match of teamMatches) {
+        if (match.comp_level == 'qm') {
+          let alliance;
+          if (match.alliances.blue.team_keys.includes(`frc${teamNum}`)) {
+            alliance = 'blue';
+          } else {
+            alliance = 'red';
+          }
+
+          const teamScore = match.score_breakdown[alliance].totalPoints/3;
+          const matchNum = match.match_number;
+          qualNums.push(matchNum);
+          oldScoreData.push(teamScore);
+
+          const estimatedTeamScore = calculateWeightedAverage(oldScoreData);
+          scoreData.push(estimatedTeamScore);
+          
+          const teamAllianceScore = match.score_breakdown[alliance].totalPoints;
+          const opponentAllianceScore = match.score_breakdown[alliance == 'blue' ? 'red' : 'blue'].totalPoints;
+          if (teamAllianceScore > opponentAllianceScore) {
+            winCount++;
+          } else {
+            lossCount++;
+          }
+        }
+      }
+      if (qualNums.length == 0) {
+        return res.json({"message": "No data found for this event."});
+      }
+      // sort qualNums and scoreData by qualNums
+      let sortedQualNums = [...qualNums].sort((a, b) => a - b);
+      let sortedScoreData = [];
+      for (let qualNum of sortedQualNums) {
+        sortedScoreData.push(scoreData[qualNums.indexOf(qualNum)]);
+      }
+      data.graphs[0].labels = sortedQualNums;
+      for (let i = 0; i < data.graphs[0].labels.length; i++) {
+        data.graphs[0].labels[i] = `Qual ${data.graphs[0].labels[i]}`;
+      }
+      data.graphs[0].data = sortedScoreData;
+      let winLossPie = {
+        title: 'Win/Loss',
+        type: 'pie',
+        data: [
+          {
+            name: 'Wins',
+            population: winCount,
+            color: "#58ba6d",
+            legendFontColor: '#e3e2e6',
+            legendFontSize: 15
+          },
+          {
+            name: 'Losses',
+            population: lossCount,
+            color: "#9a5c5c",
+            legendFontColor: '#e3e2e6',
+            legendFontSize: 15
+          }
+        ]
+      }
+      data.graphs.push(winLossPie);
+      
+      res.json(data);
     } catch (e) {
-      res.json(e.name);
+      res.json({error: e.name, message: e.message});
     }
   });
 
@@ -161,22 +260,22 @@ function startServer() {
             const teamMedia = await ky.get(`https://www.thebluealliance.com/api/v3/team/frc${teamNum}/media/${year}`, {headers: {'X-TBA-Auth-Key': API_KEY}}).json();
             if (teamMedia.length == 0) {
               bacache.put(`frc${teamNum}-${year}`, "no_media");
-              return res.json("no_media");
+              return res.json({media: "no_media", message: "build_cache"});
             }
             for (let image of teamMedia) {
               if (image.type == 'imgur') {
                 bacache.put(`frc${teamNum}-${year}`, image.direct_url);
-                return res.json(image.direct_url);
+                return res.json({media: image.direct_url, message: "build_cache"});
               }
             }
             bacache.put(`frc${teamNum}-${year}`, "no_media");
-            return res.json("no_media");
+            return res.json({media: "no_media", message: "build_cache"});
           } catch (e) {
             console.log(e)
           }
         } else {
           console.log(`Cache hit for frc${teamNum}-${year}, returning cached value...`)
-          res.json(value.toString());
+          res.json({media: value.toString(), message: "cache_hit"});
         }
         resolve();
       });
