@@ -1,0 +1,28 @@
+{
+  "name": "scoutinator-server",
+  "version": "1.0.0",
+  "description": "Cloud server for the scoutinator scouting app.",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "server",
+    "scouting",
+    "frc",
+    "cloud",
+    "api"
+  ],
+  "author": "TBUkFRC",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "ky": "^1.1.3",
+    "leveldown": "^6.1.1",
+    "levelup": "^5.1.1",
+    "progress": "^2.0.3"
+  }
+}
