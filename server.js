@@ -13,7 +13,7 @@ const bacache = levelup(leveldown('./bluealliance_cache'));
 const cachePrebuilding = false;
 
 if (cachePrebuilding) {
-  let bar = new ProgressBar('Building Image Cache :bar :current/:total :percent :etas remaining', { total: 100 });
+  let bar = new ProgressBar('Building Image Cache :bar :current/:total :percent :etas remaining', { total: 10000 });
 
   bacache.get('cache_built', async (err, value) => {
     if (err) {
@@ -35,7 +35,7 @@ if (cachePrebuilding) {
 
 async function buildCache() {
   console.clear();
-  for (let i = 1; i <= 100; i++) {
+  for (let i = 1; i <= 10000; i++) {
     let foundImgur = false;
     readline.cursorTo(process.stdout, 0, 0);
     let teamYears;
