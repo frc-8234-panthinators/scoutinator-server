@@ -12,8 +12,10 @@ const bacache = levelup(leveldown('./bluealliance_cache'));
 
 const cachePrebuilding = false;
 
+let bar;
+
 if (cachePrebuilding) {
-  let bar = new ProgressBar('Building Image Cache :bar :current/:total :percent :etas remaining', { total: 10000 });
+  bar = new ProgressBar('Building Image Cache :bar :current/:total :percent :etas remaining', { total: 10000 });
 
   bacache.get('cache_built', async (err, value) => {
     if (err) {
